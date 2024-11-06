@@ -1,0 +1,76 @@
+// Define pins for LEDs
+int greenLED = 3;
+int yellowLED = 4;
+int redLED = 5;
+
+// Define pins for ultrasonic sensor
+int trigPin = 11;
+int echoPin = 10;
+
+// Define potentiometer pin
+int potPin = A4;
+
+// Set base range values
+const int minThreshold = 5;      // Minimum distance threshold for turning on LEDs
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT);  // Trigger pin for sending the trigger signal
+  pinMode(echoPin, INPUT);   // Echo pin for receiving the echo signal
+  pinMode(greenLED, OUTPUT);
+  pinMode(yellowLED, OUTPUT);
+  pinMode(redLED, OUTPUT);
+  pinMode(potPin, INPUT);    // Set potentiometer pin as input
+}
+
+void loop() {
+  // Read potentiometer value and map it to set the max distance threshold
+  int potValue = analogRead(potPin);
+  int maxDistance = map(potValue, 0, 1023, minThreshold, 100);  // Set max up to 100 cm
+
+  // Send a 10us pulse to trigger the ultrasonic sensor
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Read the echo time and calculate distance
+  long duration = pulseIn(echoPin, HIGH);
+  int distance = duration * 0.034 / 2; // Convert time to distance in cm
+
+  // Print the measured distance and max threshold
+  Serial.print("Measured Distance: ");
+  Serial.print(distance);
+  Serial.print(" cm, Max Threshold: ");
+  Serial.print(maxDistance);
+  Serial.println(" cm");
+
+  // Control LEDs based on measured distance and potentiometer-adjusted thresholds
+  if (distance > maxDistance * 0.7) {
+    // Green LED if distance is within 70-100% of max threshold
+    digitalWrite(greenLED, HIGH);
+    digitalWrite(yellowLED, LOW);
+    digitalWrite(redLED, LOW);
+  } 
+  else if (distance > maxDistance * 0.3) {
+    // Yellow LED if distance is within 30-70% of max threshold
+    digitalWrite(greenLED, LOW);
+    digitalWrite(yellowLED, HIGH);
+    digitalWrite(redLED, LOW);
+  } 
+  else if (distance <= maxDistance * 0.3) {
+    // Red LED if distance is within 0-30% of max threshold
+    digitalWrite(greenLED, LOW);
+    digitalWrite(yellowLED, LOW);
+    digitalWrite(redLED, HIGH);
+  } 
+  else {
+    // Turn off all LEDs if distance is outside defined range
+    digitalWrite(greenLED, LOW);
+    digitalWrite(yellowLED, LOW);
+    digitalWrite(redLED, LOW);
+  }
+
+  delay(500);  // Small delay for stability
+}
